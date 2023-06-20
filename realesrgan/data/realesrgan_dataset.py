@@ -55,7 +55,7 @@ class RealESRGANDataset(data.Dataset):
                 self.paths = [os.path.join(self.gt_folder, v) for v in paths]
 
         # blur settings for the first degradation
-        self.blur_kernel_size = opt['blur_kernel_size']
+        # self.blur_kernel_size = opt['blur_kernel_size']
         self.kernel_list = opt['kernel_list']
         self.kernel_prob = opt['kernel_prob']  # a list for each kernel probability
         self.blur_sigma = opt['blur_sigma']
@@ -64,7 +64,7 @@ class RealESRGANDataset(data.Dataset):
         self.sinc_prob = opt['sinc_prob']  # the probability for sinc filters
 
         # blur settings for the second degradation
-        self.blur_kernel_size2 = opt['blur_kernel_size2']
+        # self.blur_kernel_size2 = opt['blur_kernel_size2']
         self.kernel_list2 = opt['kernel_list2']
         self.kernel_prob2 = opt['kernel_prob2']
         self.blur_sigma2 = opt['blur_sigma2']
@@ -79,6 +79,9 @@ class RealESRGANDataset(data.Dataset):
         # TODO: kernel range is now hard-coded, should be in the configure file
         self.pulse_tensor = torch.zeros(21, 21).float()  # convolving with pulse tensor brings no blurry effect
         self.pulse_tensor[10, 10] = 1
+
+        self.customize_model = opt['customize_mode']
+        print("[INFO] - Customize mode: ", self.customize_model)
 
     def __getitem__(self, index):
         if self.file_client is None:
@@ -185,8 +188,15 @@ class RealESRGANDataset(data.Dataset):
         kernel = torch.FloatTensor(kernel)
         kernel2 = torch.FloatTensor(kernel2)
 
-        return_d = {'gt': img_gt, 'kernel1': kernel, 'kernel2': kernel2, 'sinc_kernel': sinc_kernel, 'gt_path': gt_path}
+        return_d = {'gt': img_gt, 'kernel1': kernel, 'kernel2': kernel2,
+                    'sinc_kernel': sinc_kernel, 'gt_path': gt_path,
+                    'customize_mode': self.customize_model}
+
         return return_d
 
     def __len__(self):
         return len(self.paths)
+
+
+if __name__ == '__main__':
+    pass

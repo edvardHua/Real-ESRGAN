@@ -2,6 +2,8 @@ import argparse
 import cv2
 import glob
 import os
+
+import numpy as np
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from basicsr.utils.download_util import load_file_from_url
 
@@ -22,6 +24,7 @@ def main():
         help=('Model names: RealESRGAN_x4plus | RealESRNet_x4plus | RealESRGAN_x4plus_anime_6B | RealESRGAN_x2plus | '
               'realesr-animevideov3 | realesr-general-x4v3'))
     parser.add_argument('-o', '--output', type=str, default='results', help='Output folder')
+    parser.add_argument("--vs", action="store_true", help="Concat image in horizontal")
     parser.add_argument(
         '-dn',
         '--denoise_strength',
@@ -64,6 +67,9 @@ def main():
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
         netscale = 4
         file_url = ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.1/RealESRNet_x4plus.pth']
+    elif args.model_name == "RealESRNet_x2plus":
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+        netscale = 2
     elif args.model_name == 'RealESRGAN_x4plus_anime_6B':  # x4 RRDBNet model with 6 blocks
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
         netscale = 4
@@ -132,9 +138,12 @@ def main():
 
     for idx, path in enumerate(paths):
         imgname, extension = os.path.splitext(os.path.basename(path))
-        print('Testing', idx, imgname)
+
+        if not os.path.isfile(path):
+            continue
 
         img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        ori_img = img.copy()
         if len(img.shape) == 3 and img.shape[2] == 4:
             img_mode = 'RGBA'
         else:
@@ -159,7 +168,12 @@ def main():
                 save_path = os.path.join(args.output, f'{imgname}.{extension}')
             else:
                 save_path = os.path.join(args.output, f'{imgname}_{args.suffix}.{extension}')
-            cv2.imwrite(save_path, output)
+            if args.vs:
+                h, w, _ = output.shape
+                ori_img = cv2.resize(ori_img, (w, h), interpolation=cv2.INTER_CUBIC)
+                cv2.imwrite(save_path, np.hstack([ori_img, output]))
+            else:
+                cv2.imwrite(save_path, output)
 
 
 if __name__ == '__main__':

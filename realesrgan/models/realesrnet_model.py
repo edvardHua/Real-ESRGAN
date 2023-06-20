@@ -93,18 +93,21 @@ class RealESRNetModel(SRModel):
                 scale = 1
             mode = random.choice(['area', 'bilinear', 'bicubic'])
             out = F.interpolate(out, scale_factor=scale, mode=mode)
-            # add noise
-            gray_noise_prob = self.opt['gray_noise_prob']
-            if np.random.uniform() < self.opt['gaussian_noise_prob']:
-                out = random_add_gaussian_noise_pt(
-                    out, sigma_range=self.opt['noise_range'], clip=True, rounds=False, gray_prob=gray_noise_prob)
-            else:
-                out = random_add_poisson_noise_pt(
-                    out,
-                    scale_range=self.opt['poisson_scale_range'],
-                    gray_prob=gray_noise_prob,
-                    clip=True,
-                    rounds=False)
+
+            if data['customize_mode'] is False:
+                # 只有默认模式下才加 noise
+                gray_noise_prob = self.opt['gray_noise_prob']
+                if np.random.uniform() < self.opt['gaussian_noise_prob']:
+                    out = random_add_gaussian_noise_pt(
+                        out, sigma_range=self.opt['noise_range'], clip=True, rounds=False, gray_prob=gray_noise_prob)
+                else:
+                    out = random_add_poisson_noise_pt(
+                        out,
+                        scale_range=self.opt['poisson_scale_range'],
+                        gray_prob=gray_noise_prob,
+                        clip=True,
+                        rounds=False)
+
             # JPEG compression
             jpeg_p = out.new_zeros(out.size(0)).uniform_(*self.opt['jpeg_range'])
             out = torch.clamp(out, 0, 1)  # clamp to [0, 1], otherwise JPEGer will result in unpleasant artifacts
@@ -125,18 +128,20 @@ class RealESRNetModel(SRModel):
             mode = random.choice(['area', 'bilinear', 'bicubic'])
             out = F.interpolate(
                 out, size=(int(ori_h / self.opt['scale'] * scale), int(ori_w / self.opt['scale'] * scale)), mode=mode)
-            # add noise
-            gray_noise_prob = self.opt['gray_noise_prob2']
-            if np.random.uniform() < self.opt['gaussian_noise_prob2']:
-                out = random_add_gaussian_noise_pt(
-                    out, sigma_range=self.opt['noise_range2'], clip=True, rounds=False, gray_prob=gray_noise_prob)
-            else:
-                out = random_add_poisson_noise_pt(
-                    out,
-                    scale_range=self.opt['poisson_scale_range2'],
-                    gray_prob=gray_noise_prob,
-                    clip=True,
-                    rounds=False)
+
+            if data['customize_mode'] is False:
+                # 只有默认模式下才加 noise
+                gray_noise_prob = self.opt['gray_noise_prob2']
+                if np.random.uniform() < self.opt['gaussian_noise_prob2']:
+                    out = random_add_gaussian_noise_pt(
+                        out, sigma_range=self.opt['noise_range2'], clip=True, rounds=False, gray_prob=gray_noise_prob)
+                else:
+                    out = random_add_poisson_noise_pt(
+                        out,
+                        scale_range=self.opt['poisson_scale_range2'],
+                        gray_prob=gray_noise_prob,
+                        clip=True,
+                        rounds=False)
 
             # JPEG compression + the final sinc filter
             # We also need to resize images to desired sizes. We group [resize back + sinc filter] together
